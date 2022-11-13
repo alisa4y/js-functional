@@ -1,15 +1,12 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ES2015",
     "outDir": "dist",
     "noImplicitAny": true,
     "declaration": true,
+    "module": "CommonJS"
   },
   "include": [
     "./src",
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
   ]
 }

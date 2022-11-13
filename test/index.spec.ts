@@ -1,5 +1,3 @@
-import { describe, it } from "mocha"
-import * as chai from "chai"
 import {
   compose,
   pipe,
@@ -11,9 +9,6 @@ import {
   guard,
   exploit,
 } from "../src"
-
-const { expect } = chai
-chai.should()
 
 type Eq<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y
   ? 1
@@ -30,7 +25,7 @@ const subtract = (x: number, y: number) => x - y
 describe("compose", () => {
   it("composes 2 functions", () => {
     const addX2 = compose(x2, add)
-    addX2(2, 3).should.equal(10)
+    expect(addX2(2, 3)).toEqual(10)
     type retType = [Expect<Eq<ReturnType<typeof addX2>, number>>]
   })
   it("will trigger error on typescript if functions aren't chainable", () => {
@@ -43,7 +38,7 @@ describe("compose", () => {
 describe("pipe", () => {
   it("it pipe 2 functions", () => {
     const addX2 = pipe(add, x2)
-    addX2(2, 3).should.equal(10)
+    expect(addX2(2, 3)).toEqual(10)
     type retType = [Expect<Eq<ReturnType<typeof addX2>, number>>]
   })
   it("will trigger error on typescript if functions aren't chainable", () => {
@@ -63,9 +58,9 @@ describe("queue", () => {
     const exFns = queue(setX, setY, setZ)
     type cases = [Expect<Eq<ReturnType<typeof exFns>, number>>]
     const ret = exFns()
-    outX.should.equal(1)
-    outY.should.equal(2)
-    ret.should.equal(3)
+    expect(outX).toEqual(1)
+    expect(outY).toEqual(2)
+    expect(ret).toEqual(3)
   })
 })
 describe("beat", () => {
@@ -76,17 +71,17 @@ describe("beat", () => {
     const isInRange = beat(is2, is3, is4)
     type cases = [Expect<Eq<typeof isInRange, (n: number) => boolean>>]
     console.log(isInRange(2))
-    isInRange(2).should.equal(true)
-    isInRange(3).should.equal(true)
-    isInRange(4).should.equal(true)
-    isInRange(5).should.equal(false)
+    expect(isInRange(2)).toEqual(true)
+    expect(isInRange(3)).toEqual(true)
+    expect(isInRange(4)).toEqual(true)
+    expect(isInRange(5)).toEqual(false)
   })
 })
 describe("curry", () => {
   it("do curry concept in functional paradigm", () => {
     const add2 = curry(add, 2)
     type cases = [Expect<Eq<typeof add2, (x: number) => number>>]
-    add2(3).should.equal(5)
+    expect(add2(3)).toEqual(5)
   })
 })
 describe("aim", () => {
@@ -97,8 +92,8 @@ describe("aim", () => {
       Expect<Eq<typeof sub1, (x: number) => number>>,
       Expect<Eq<typeof sub3, (x: number) => number>>
     ]
-    sub1(5).should.equal(4)
-    sub3(5).should.equal(2)
+    expect(sub1(5)).toEqual(4)
+    expect(sub3(5)).toEqual(2)
   })
 })
 describe("fork", () => {
@@ -130,10 +125,10 @@ describe("guard", () => {
     const isEven = (x: number) => x % 2 === 0
     const half = (x: number) => x / 2
     const halfTill2 = guard(half, not2, isEven)
-    expect(halfTill2(2)).equal(null)
-    expect(halfTill2(3)).equal(null)
-    expect(halfTill2(4)).equal(2)
-    expect(halfTill2(12)).equal(6)
+    expect(halfTill2(2)).toEqual(null)
+    expect(halfTill2(3)).toEqual(null)
+    expect(halfTill2(4)).toEqual(2)
+    expect(halfTill2(12)).toEqual(6)
     const toStr = (x: string) => x.toString()
     // @ts-expect-error
     const f1 = guard(half, not2, toStr)
@@ -143,14 +138,14 @@ describe("guard", () => {
     const f22 = guard(add, toStr, not2)
 
     const f3 = guard(add, not2)
-    expect(f3(2, 4)).equal(null)
-    expect(f3(3, 4)).equal(7)
+    expect(f3(2, 4)).toEqual(null)
+    expect(f3(3, 4)).toEqual(7)
 
     const notAdd10 = (x: number, y: number) => x + y !== 10
     const f4 = guard(add, notAdd10)
-    expect(f4(3, 5)).equal(8)
-    expect(f4(3, 7)).equal(null)
-    expect(f4(5, 5)).equal(null)
+    expect(f4(3, 5)).toEqual(8)
+    expect(f4(3, 7)).toEqual(null)
+    expect(f4(5, 5)).toEqual(null)
   })
 })
 describe("exploit", () => {
@@ -158,21 +153,21 @@ describe("exploit", () => {
     const isEven = (x: number) => x % 2 === 0
     const retTrue = (x: number) => true
     const retEven = exploit(retTrue, isEven)
-    expect(retEven(2)).equal(true)
-    expect(retEven(3)).equal(null)
-    expect(retEven(4)).equal(true)
-    expect(retEven(12)).equal(true)
-    expect(retEven(13)).equal(null)
+    expect(retEven(2)).toEqual(true)
+    expect(retEven(3)).toEqual(null)
+    expect(retEven(4)).toEqual(true)
+    expect(retEven(12)).toEqual(true)
+    expect(retEven(13)).toEqual(null)
 
     const is2 = (x: number) => x === 2
     const is3 = (x: number) => x === 3
     const is2Or3 = exploit(retTrue, is2, is3)
 
-    expect(is2Or3(2)).equal(true)
-    expect(is2Or3(3)).equal(true)
-    expect(is2Or3(4)).equal(null)
-    expect(is2Or3(12)).equal(null)
-    expect(is2Or3(13)).equal(null)
+    expect(is2Or3(2)).toEqual(true)
+    expect(is2Or3(3)).toEqual(true)
+    expect(is2Or3(4)).toEqual(null)
+    expect(is2Or3(12)).toEqual(null)
+    expect(is2Or3(13)).toEqual(null)
 
     const toStr = (x: string) => x.toString()
     // @ts-expect-error
@@ -183,13 +178,13 @@ describe("exploit", () => {
     const f22 = exploit(add, toStr, is2)
 
     const f3 = exploit(add, is2)
-    expect(f3(2, 4)).equal(6)
-    expect(f3(3, 4)).equal(null)
+    expect(f3(2, 4)).toEqual(6)
+    expect(f3(3, 4)).toEqual(null)
 
     const notAdd10 = (x: number, y: number) => x + y !== 10
     const f4 = exploit(add, notAdd10)
-    expect(f4(3, 5)).equal(8)
-    expect(f4(3, 7)).equal(null)
-    expect(f4(5, 5)).equal(null)
+    expect(f4(3, 5)).toEqual(8)
+    expect(f4(3, 7)).toEqual(null)
+    expect(f4(5, 5)).toEqual(null)
   })
 })
