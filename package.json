@@ -4,7 +4,6 @@
   "description": "a basic functional tools made for typescript to hint types of generated funciton",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "type": "module",
   "scripts": {
     "build": "tsc",
     "test": "jest"
