@@ -6,6 +6,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
+    "build:watch": "tsc --watch",
     "test": "jest"
   },
   "keywords": [
@@ -17,7 +18,7 @@
     "ts"
   ],
   "author": "ali safari",
-  "license": "ISC",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/alisa4y/js-usecase.git"

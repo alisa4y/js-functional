@@ -136,13 +136,16 @@ export function curry<T extends Fn, U extends any[]>(
   return (...args2: [...RemainingTuple<U, Parameters<T>>]): ReturnType<T> =>
     f(...args, ...args2)
 }
-
+type Reverse<T extends any[]> = T extends [infer t, ...infer rt]
+  ? [...Reverse<rt>, t]
+  : []
 export function aim<T extends Fn, U extends any[]>(
   f: T,
-  ...args2: [...U] extends PartialTuple<Parameters<T>> ? [...U] : never
+  ...args2: [...U] extends PartialTuple<Reverse<Parameters<T>>> ? [...U] : never
 ) {
-  return (...args: [...RemainingTuple<U, Parameters<T>>]): ReturnType<T> =>
-    f(...args, args2)
+  return (
+    ...args: [...Reverse<RemainingTuple<U, Reverse<Parameters<T>>>>]
+  ): ReturnType<T> => f(...args, ...args2)
 }
 
 export function fork<T extends Fn[]>(

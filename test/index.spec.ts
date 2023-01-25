@@ -88,12 +88,22 @@ describe("aim", () => {
   it("same as curry but in different arguments order the later comes first", () => {
     const sub1 = aim(subtract, 1)
     const sub3 = aim(subtract, 3)
+    const fun = (s: string, n: number, o: object) => s + n
+    // @ts-expect-error
+    aim(fun, "hello")
+    // @ts-expect-error
+    aim(fun, 1)
+    // correct
+    const f = aim(fun, {})
+
     type cases = [
       Expect<Eq<typeof sub1, (x: number) => number>>,
-      Expect<Eq<typeof sub3, (x: number) => number>>
+      Expect<Eq<typeof sub3, (x: number) => number>>,
+      Expect<Eq<typeof f, (a1: string, a2: number) => string>>
     ]
     expect(sub1(5)).toEqual(4)
     expect(sub3(5)).toEqual(2)
+    expect(f("hello", 10)).toEqual("hello10")
   })
 })
 describe("fork", () => {
