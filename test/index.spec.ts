@@ -21,6 +21,7 @@ const add: (x: number, y: number) => number = (x, y) => x + y
 const x2 = (x: number): number => x * 2
 const toStr = (x: any): string => x.toString()
 const subtract = (x: number, y: number) => x - y
+const numToStr = (n: number) => n.toString()
 
 describe("compose", () => {
   it("composes 2 functions", () => {
@@ -38,8 +39,12 @@ describe("compose", () => {
 describe("pipe", () => {
   it("it pipe 2 functions", () => {
     const addX2 = pipe(add, x2)
+    const addToS = pipe(add, x2, numToStr)
     expect(addX2(2, 3)).toEqual(10)
-    type retType = [Expect<Eq<ReturnType<typeof addX2>, number>>]
+    type types = [
+      Expect<Eq<typeof addX2, (...args: Parameters<typeof add>) => number>>,
+      Expect<Eq<typeof addToS, (...args: Parameters<typeof add>) => string>>
+    ]
   })
   it("will trigger error on typescript if functions aren't chainable", () => {
     // @ts-expect-error

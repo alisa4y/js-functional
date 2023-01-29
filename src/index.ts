@@ -1,4 +1,4 @@
-type Fn = (...args: any) => any
+type Fn = (...args: any[]) => any
 type LastT<T extends any[], R = any> = T extends [infer a, ...infer tRest]
   ? LastT<tRest, a>
   : R
@@ -21,27 +21,27 @@ export function compose<T extends Fn[]>(
 ) {
   const lastFn = fns.pop() as Fn
   return (...args: Parameters<LastT<T>>) =>
-    fns.reduceRight(
-      (acc, v: Fn) => v(acc),
-      lastFn.apply(null, args)
-    ) as ReturnType<T[0]>
+    fns.reduceRight((acc, v: Fn) => v(acc), lastFn(...args)) as ReturnType<T[0]>
 }
-type PipeFns<T extends any[]> = T extends [infer t, infer next, ...infer tRest]
-  ? t extends Fn
-    ? next extends (args: ReturnType<t>) => any
-      ? [t, ...PipeFns<[next, ...tRest]>]
+type Shift<T extends any[]> = T extends [infer t, ...infer tRest] ? tRest : []
+type PipeFns<T extends any[]> = T extends [
+  (...args: any[]) => infer t,
+  (...args: infer p) => any,
+  ...infer rest
+]
+  ? t extends p[0]
+    ? Shift<p> extends []
+      ? [T[0], ...PipeFns<Shift<T>>]
       : never
     : never
-  : T extends [infer t]
-  ? [t]
-  : never
+  : T
 
-export function pipe<T extends Fn[]>(
-  ...fns: [...T] extends PipeFns<[...T]> ? [...T] : never
+export function pipe<T extends Fn, U extends Fn[]>(
+  fn1: T,
+  ...fns: U extends Shift<PipeFns<[T, ...U]>> ? U : never
 ) {
-  const fn = fns.shift() as Fn
-  return (...args: any[]) =>
-    fns.reduce((v, f: Fn) => f(v), fn(...args)) as ReturnType<LastT<T>>
+  return (...args: Parameters<T>) =>
+    fns.reduce((v, f: Fn) => f(v), fn1(...args)) as ReturnType<LastT<U>>
 }
 
 type Eq<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y
