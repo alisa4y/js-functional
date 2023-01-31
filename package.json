@@ -21,7 +21,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/alisa4y/js-usecase.git"
+    "url": "https://github.com/alisa4y/js-functional.git"
   },
   "devDependencies": {
     "@types/jest": "^29.2.2",
