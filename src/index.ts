@@ -23,7 +23,11 @@ export function compose<T extends Fn[]>(
   return (...args: Parameters<LastT<T>>) =>
     fns.reduceRight((acc, v: Fn) => v(acc), lastFn(...args)) as ReturnType<T[0]>
 }
-type Shift<T extends any[]> = T extends [infer t, ...infer tRest] ? tRest : []
+type Shift<T extends any[]> = Eq<T, []> extends true
+  ? []
+  : T extends [(infer t)?, ...infer tRest]
+  ? tRest
+  : []
 type PipeFns<T extends any[]> = T extends [
   (...args: any[]) => infer t,
   (...args: infer p) => any,
@@ -71,6 +75,7 @@ type testIsSuperset = [
   Expect<IsSuperset<[number], never>>,
   Expect<IsSuperset<[number], [number]>>,
   Expect<IsSuperset<[number, string], [number]>>,
+  // Expect<IsSuperset<[number, string], [string]>>,
   // @ts-expect-error
   Expect<IsSuperset<[number], [number, string]>>,
   // @ts-expect-error
@@ -114,38 +119,82 @@ export function beat<T extends Fn[]>(...fns: [...T]) {
   return (...args: Parameters<T[0]>): boolean =>
     fns.some(fn => fn.apply(null, args))
 }
-type PartialTuple<
-  TUPLE extends any[],
-  EXTRACTED extends any[] = []
-> = TUPLE extends [infer NEXT_PARAM, ...infer REMAINING]
-  ? PartialTuple<REMAINING, [...EXTRACTED, NEXT_PARAM?]>
-  : [...EXTRACTED, ...TUPLE]
 type RemainingTuple<
   Provided extends any[],
-  Remain extends any[]
+  Params extends any[]
 > = Provided extends [infer a, ...infer pRest]
-  ? Remain extends [infer b, ...infer eRest]
+  ? Params extends [(infer b)?, ...infer eRest]
     ? RemainingTuple<pRest, eRest>
     : never
-  : Remain
+  : Params
 
 export function curry<T extends Fn, U extends any[]>(
   f: T,
-  ...args: [...U] extends PartialTuple<Parameters<T>> ? [...U] : never
+  ...args: U extends Partial<Parameters<T>> ? U : never
 ) {
-  return (...args2: [...RemainingTuple<U, Parameters<T>>]): ReturnType<T> =>
+  return (...args2: RemainingTuple<U, Parameters<T>>): ReturnType<T> =>
     f(...args, ...args2)
 }
-type Reverse<T extends any[]> = T extends [infer t, ...infer rt]
-  ? [...Reverse<rt>, t]
-  : []
+
+type Is1stMatch<T extends any[], P extends any[]> = T extends [
+  infer a,
+  ...infer rest
+]
+  ? P extends [(infer b)?, ...infer pRest]
+    ? Eq<a, b> extends true
+      ? Is1stMatch<rest, pRest>
+      : false
+    : false
+  : true
+
+type IsPartialMatch<T extends any[], P extends any[]> = P extends []
+  ? false
+  : Is1stMatch<T, P> extends true
+  ? true
+  : IsPartialMatch<T, Shift<P>>
+
+type IsAimArgs<T extends any[], P extends any[]> = IsPartialMatch<
+  T,
+  P
+> extends true
+  ? T
+  : never
+
+type UnPartial1st<T extends any[]> = T extends [(infer a)?, ...infer r]
+  ? a
+  : never
+
+type AimArgs<
+  T extends any[],
+  P extends any[],
+  Args extends any[] = [],
+  Found = never
+> = P extends []
+  ? Found
+  : Is1stMatch<T, P> extends true
+  ? AimArgs<T, Shift<P>, [...Args, UnPartial1st<P>], Args>
+  : AimArgs<T, Shift<P>, [...Args, UnPartial1st<P>], Found>
+
+type t0 = [n: number, s?: string, ar?: any[]]
+type t1 = [s?: string, ar?: any[]]
+type t11 = [s: string, ar: any[]]
+type t2 = [s?: string]
+type t22 = [s: string]
+type t3 = [] extends [(infer a)?, ...infer rest]
+  ? Eq<rest, unknown[]> extends true
+    ? "is unknown"
+    : "nooo"
+  : false
+type t4 = Is1stMatch<t11, Shift<t0>>
+type t5 = AimArgs<[ar: any[]], t0>
+type t6 = Eq<[], unknown[]>
+
 export function aim<T extends Fn, U extends any[]>(
   f: T,
-  ...args2: [...U] extends PartialTuple<Reverse<Parameters<T>>> ? [...U] : never
+  ...args2: U extends IsAimArgs<U, Parameters<T>> ? U : never
 ) {
-  return (
-    ...args: [...Reverse<RemainingTuple<U, Reverse<Parameters<T>>>>]
-  ): ReturnType<T> => f(...args, ...args2)
+  return (...args: [...AimArgs<U, Parameters<T>>]): ReturnType<T> =>
+    f(...args, ...args2)
 }
 
 export function fork<T extends Fn[]>(

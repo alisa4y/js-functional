@@ -84,31 +84,59 @@ describe("beat", () => {
 })
 describe("curry", () => {
   it("do curry concept in functional paradigm", () => {
+    const fun = (s: string, n: number, o: object) => s + n
+    const mparam = (n?: number, s?: string, ar?: any[]) => n
+
     const add2 = curry(add, 2)
-    type cases = [Expect<Eq<typeof add2, (x: number) => number>>]
+    const mp = curry(mparam, 1)
+    const f = curry(fun, "s", 1)
+    const f2 = curry(fun, "s")
+    const sub1 = curry(subtract, 1)
+    // @ts-expect-error
+    curry(fun, 1)
+    // @ts-expect-error
+    curry(mp, {})
+    // correct
+    type cases = [
+      Expect<Eq<typeof add2, (x: number) => number>>,
+      Expect<Eq<typeof mp, (s?: string, o?: any[]) => number | undefined>>,
+      Expect<Eq<typeof f, (o: object) => string>>,
+      Expect<Eq<typeof f2, (n: number, o: object) => string>>,
+      Expect<Eq<typeof sub1, (x: number) => number>>
+    ]
     expect(add2(3)).toEqual(5)
   })
 })
 describe("aim", () => {
   it("same as curry but in different arguments order the later comes first", () => {
+    const fun = (s: string, n: number, o: object) => s + n
+    const mparam = (n: number, s?: string, ar?: any[]) => n
+
+    const mp = aim(mparam, [])
+    const mp2 = aim(mparam, "hel", [])
+    const f = aim(fun, {} as object)
+    const f2 = aim(fun, 1, {} as object)
+    const f3 = aim(fun, 1)
+    const f4 = aim(fun, "hello")
     const sub1 = aim(subtract, 1)
     const sub3 = aim(subtract, 3)
-    const fun = (s: string, n: number, o: object) => s + n
-    // @ts-expect-error
-    aim(fun, "hello")
-    // @ts-expect-error
-    aim(fun, 1)
-    // correct
-    const f = aim(fun, {})
 
     type cases = [
       Expect<Eq<typeof sub1, (x: number) => number>>,
       Expect<Eq<typeof sub3, (x: number) => number>>,
-      Expect<Eq<typeof f, (a1: string, a2: number) => string>>
+      Expect<Eq<typeof f, (a1: string, a2: number) => string>>,
+      Expect<Eq<typeof f2, (a1: string) => string>>,
+      Expect<Eq<typeof f3, (a1: string) => string>>,
+      Expect<Eq<typeof f4, () => string>>,
+      Expect<Eq<typeof mp, (a1: number, a2: string) => number>>,
+      Expect<Eq<typeof mp2, (a1: number) => number>>
     ]
     expect(sub1(5)).toEqual(4)
     expect(sub3(5)).toEqual(2)
     expect(f("hello", 10)).toEqual("hello10")
+    expect(f2("hello")).toEqual("hello1")
+    expect(mp(11, "hello")).toEqual(11)
+    expect(mp2(13)).toEqual(13)
   })
 })
 describe("fork", () => {
@@ -116,15 +144,31 @@ describe("fork", () => {
     const x2 = (x: number) => x * 2
     const is3 = (x: number) => x === 3
     const toStr = (x: number, format: string) => x.toString()
+    const isN = (x: number, condition: number) => x === condition
+    const isN2 = (x: number, condition?: number) => x === condition
+    const toStr2 = (x: number, format?: string) => x.toString()
+
     const fun = fork(x2, is3, toStr)
     const reverseFun = fork(toStr, is3, x2)
-    const isN = (x: number, condition: number) => x === condition
+
     // @ts-expect-error
     const fun2 = fork(x2, isN, toStr)
+
+    const fun3 = fork(x2, isN, toStr2)
+    const fun4 = fork(x2, isN2, toStr)
+    const fun5 = fork(x2, isN2)
+
     type cases = [
       Expect<
         Eq<typeof fun, (x: number, s: string) => [number, boolean, string]>
       >,
+      Expect<
+        Eq<typeof fun3, (x: number, s: number) => [number, boolean, string]>
+      >,
+      Expect<
+        Eq<typeof fun4, (x: number, s: string) => [number, boolean, string]>
+      >,
+      Expect<Eq<typeof fun5, (x: number, s?: number) => [number, boolean]>>,
       Expect<
         Eq<
           typeof reverseFun,
