@@ -30,7 +30,7 @@ used in situations when you are doing some filtering
 takes as many functions and executes them in the given order against passed arguments and returns the results as an array
 
 `guard : (mainFn, ...fns) : mainFn_result | null`
-takes a main function and many functions as filters and executes the main function if and only if the passed arguments satisfies every filter function
+it is meant for typescript and type convertion for exampel when you have a union type and you want to filter or specify what type it is by using guard type to pass as parameter to a function which only takes a type of that union
 
 `exploit : (mainFn, ...fns) : mainFn_result | null`
 takes a main function and many functions as filters and executes the main function if and only if the passed arguments satisfies any filter function

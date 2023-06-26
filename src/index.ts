@@ -175,20 +175,6 @@ type AimArgs<
   ? AimArgs<T, Shift<P>, [...Args, UnPartial1st<P>], Args>
   : AimArgs<T, Shift<P>, [...Args, UnPartial1st<P>], Found>
 
-type t0 = [n: number, s?: string, ar?: any[]]
-type t1 = [s?: string, ar?: any[]]
-type t11 = [s: string, ar: any[]]
-type t2 = [s?: string]
-type t22 = [s: string]
-type t3 = [] extends [(infer a)?, ...infer rest]
-  ? Eq<rest, unknown[]> extends true
-    ? "is unknown"
-    : "nooo"
-  : false
-type t4 = Is1stMatch<t11, Shift<t0>>
-type t5 = AimArgs<[ar: any[]], t0>
-type t6 = Eq<[], unknown[]>
-
 export function aim<T extends Fn, U extends any[]>(
   f: T,
   ...args2: U extends IsAimArgs<U, Parameters<T>> ? U : never
@@ -203,13 +189,13 @@ export function fork<T extends Fn[]>(
   return (...args: FindSuperset<GetFnsParams<T>>) =>
     fns.map(f => f(...args)) as GetRetTypes<T>
 }
-
-export function guard<T extends Fn>(
-  f: T,
-  ...gFns: ((...args: Parameters<T>) => boolean)[]
+type GuardType<TFunc> = TFunc extends (arg: any) => arg is infer R ? R : never
+export function guard<T extends Fn, U extends (arg: GuardType<T>) => any>(
+  f: U,
+  gfn: T
 ) {
-  return (...args: [...Parameters<T>]): ReturnType<T> | null =>
-    (gFns.every(gfn => gfn(...args)) && f(...args)) || null
+  return (arg: Parameters<T>[0]): ReturnType<U> | null =>
+    (gfn(arg) && f(arg)) || null
 }
 export function exploit<T extends Fn>(
   f: T,

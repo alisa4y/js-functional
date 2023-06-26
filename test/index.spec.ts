@@ -179,32 +179,26 @@ describe("fork", () => {
   })
 })
 describe("guard", () => {
-  it("creates a function with a condition function that each time will only execute if args met the condition", () => {
-    const not2 = (x: number) => x !== 2
-    const isEven = (x: number) => x % 2 === 0
-    const half = (x: number) => x / 2
-    const halfTill2 = guard(half, not2, isEven)
-    expect(halfTill2(2)).toEqual(null)
-    expect(halfTill2(3)).toEqual(null)
-    expect(halfTill2(4)).toEqual(2)
-    expect(halfTill2(12)).toEqual(6)
-    const toStr = (x: string) => x.toString()
-    // @ts-expect-error
-    const f1 = guard(half, not2, toStr)
-    // @ts-expect-error
-    const f2 = guard(half, toStr, not2)
-    // @ts-expect-error
-    const f22 = guard(add, toStr, not2)
+  it("you can use guard with typescript to distinguish and filter type", () => {
+    type TA = { value: number }
+    type TB = { value: string }
+    type T = TA | TB
+    const add2 = ({ value }: TA) => value + 2
+    const greet = ({ value }: TB) => "greeting " + value
 
-    const f3 = guard(add, not2)
-    expect(f3(2, 4)).toEqual(null)
-    expect(f3(3, 4)).toEqual(7)
+    const doAdd = guard(add2, (t: T): t is TA => typeof t.value === "number")
+    const doGreet = guard(greet, (t: T): t is TB => typeof t.value === "string")
+    type cases = [
+      Expect<Eq<typeof doAdd, (x: T) => number | null>>,
+      Expect<Eq<typeof doGreet, (x: T) => string | null>>
+    ]
+    expect(doAdd({ value: 4 })).toBe(6)
+    expect(doAdd({ value: 10 })).toBe(12)
+    expect(doAdd({ value: "ali" })).toBeNull()
 
-    const notAdd10 = (x: number, y: number) => x + y !== 10
-    const f4 = guard(add, notAdd10)
-    expect(f4(3, 5)).toEqual(8)
-    expect(f4(3, 7)).toEqual(null)
-    expect(f4(5, 5)).toEqual(null)
+    expect(doGreet({ value: "ali" })).toBe("greeting ali")
+    expect(doGreet({ value: "Mr. smith" })).toBe("greeting Mr. smith")
+    expect(doGreet({ value: 10 })).toBeNull()
   })
 })
 describe("exploit", () => {
