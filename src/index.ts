@@ -81,20 +81,30 @@ type LastT<T extends any[], R = any> = T extends [infer a, ...infer tRest]
   ? LastT<tRest, a>
   : R
 
+// type ComposedFns<T extends any[]> = T extends [
+//   infer t,
+//   infer next,
+//   ...infer tRest
+// ]
+//   ? next extends Fn
+//     ? t extends (args: ReturnType<next>) => any
+//       ? [t, ...ComposedFns<[next, ...tRest]>]
+//       : never
+//     : never
+//   : T extends [infer t]
+//   ? [t]
+//   : never
 type ComposedFns<T extends any[]> = T extends [
-  infer t,
-  infer next,
-  ...infer tRest
+  (...args: infer p) => any,
+  (...args: any[]) => infer t,
+  ...infer rest
 ]
-  ? next extends Fn
-    ? t extends (args: ReturnType<next>) => any
-      ? [t, ...ComposedFns<[next, ...tRest]>]
+  ? t extends p[0]
+    ? Shift<p> extends []
+      ? [T[0], ...PipeFns<Shift<T>>]
       : never
     : never
-  : T extends [infer t]
-  ? [t]
-  : never
-
+  : T
 type Shift<T extends any[]> = Eq<T, []> extends true
   ? []
   : T extends [(infer t)?, ...infer tRest]
