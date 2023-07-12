@@ -9,6 +9,7 @@ import {
   guard,
   ifSome,
   ifEvery,
+  flatMap,
 } from "../src"
 
 type Eq<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y
@@ -140,7 +141,7 @@ describe("aim", () => {
     expect(mp2(13)).toEqual(13)
   })
 })
-describe("fork", () => {
+describe("map", () => {
   it("executes an array of functions against some arguments", () => {
     const x2 = (x: number) => x * 2
     const is3 = (x: number) => x === 3
@@ -177,6 +178,22 @@ describe("fork", () => {
         >
       >
     ]
+  })
+})
+describe("flatMap", () => {
+  it("takes functions which returns array of same type then returns all the result and flattening the results of each function", () => {
+    const f1 = () => [1, 2]
+    const f2 = () => [3, 4]
+    const f3 = () => [1, 2]
+    const allRets = flatMap(f1, f2, f3)
+    expect(allRets()).toEqual([1, 2, 3, 4, 1, 2])
+
+    const f4 = () => [11, "hello"]
+
+    // @ts-expect-error
+    const allRets2 = flatMap(f1, f2, f4)
+
+    type cases = [Expect<Eq<typeof allRets, () => number[]>>]
   })
 })
 describe("guard", () => {

@@ -42,17 +42,13 @@ export function every<T extends Fn[]>(...fns: [...T]) {
   return (...args: Parameters<T[0]>): boolean =>
     fns.every(fn => fn.apply(null, args))
 }
-export function map<T extends Fn[]>(
-  ...fns: FindSuperset<GetFnsParams<T>> extends never ? never : [...T]
-) {
-  return (...args: FindSuperset<GetFnsParams<T>>) =>
+export function map<T extends Fn[]>(...fns: HasSuperParams<T>) {
+  return (...args: FindSuperParams<T>) =>
     fns.map(f => f(...args)) as GetRetTypes<T>
 }
-export function flatMap<T extends Fn[]>(
-  ...fns: FindSuperset<GetFnsParams<T>> extends never ? never : [...T]
-) {
-  return (...args: FindSuperset<GetFnsParams<T>>) =>
-    fns.flatMap(f => f(...args)) as GetRetTypes<T>
+export function flatMap<T extends Fn[]>(...fns: HasSParamsAndRets<T>) {
+  return (...args: FindSuperParams<T>) =>
+    fns.flatMap(f => f(...args)) as GetRetTypes<T>[0]
 }
 export function guard<T extends Fn, U extends (arg: GuardType<T>) => any>(
   f: U,
@@ -152,6 +148,23 @@ type Expect<T extends true> = T
 //   // @ts-expect-error
 //   Expect<IsSuperset<[], [string]>>
 // ]
+type HasSParamsAndRets<T extends Fn[]> = FindSuperParams<T> extends never
+  ? never
+  : IsSameRets<T> extends never
+  ? never
+  : [...T]
+type HasSuperParams<T extends Fn[]> = FindSuperParams<T> extends never
+  ? never
+  : [...T]
+
+type IsSameRets<T extends Fn[]> = IsSameTypes<GetRetTypes<T>>
+
+type FindSuperParams<T extends Fn[]> = FindSuperset<GetFnsParams<T>>
+type IsSameTypes<T extends any[]> = T extends [infer a, infer b, ...infer rest]
+  ? Eq<a, b> extends true
+    ? IsSameTypes<[b, ...rest]>
+    : never
+  : [...T]
 
 type FindSuperset<T extends any[], S extends any = []> = T extends [
   infer a,
