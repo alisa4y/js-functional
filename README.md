@@ -4,22 +4,22 @@ All these tools functions returns a new function
 here fn means function
 
 functions are :
-$C aka compose 
-$L aka pipe
-$I aka queue 
-$B aka beat
-$P aka curry  
-$X aka aim
-$E aka fork  
-$G aka guard
-$T aka exploit
+compose
+pipe
+queue
+ifSome
+curry  
+aim
+fork  
+guard
+exploit
 
 compose : the known compose nothing special
-pipe : compose reverse execution
+pipe : reverse compose
 `queue : (...fns) : lastFn_result`
 takes as many functions and executes them in the given order against passed arguments and returns last one's result
 
-`beat : (...fns) : fn_result`
+`ifSome : (...fns) : fn_result`
 takes as many functions and executes them in the given order against passed arguments and terminates as soon as one of the functions returns true
 used in situations when you are doing some filtering
 

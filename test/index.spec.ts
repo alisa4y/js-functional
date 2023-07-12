@@ -2,12 +2,13 @@ import {
   compose,
   pipe,
   queue,
-  beat,
+  some,
   curry,
   aim,
-  fork,
+  map,
   guard,
-  exploit,
+  ifSome,
+  ifEvery,
 } from "../src"
 
 type Eq<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y
@@ -73,7 +74,7 @@ describe("beat", () => {
     const is2 = (n: number) => n === 2
     const is3 = (n: number) => n === 3
     const is4 = (n: number) => n === 4
-    const isInRange = beat(is2, is3, is4)
+    const isInRange = some(is2, is3, is4)
     type cases = [Expect<Eq<typeof isInRange, (n: number) => boolean>>]
     console.log(isInRange(2))
     expect(isInRange(2)).toEqual(true)
@@ -148,15 +149,15 @@ describe("fork", () => {
     const isN2 = (x: number, condition?: number) => x === condition
     const toStr2 = (x: number, format?: string) => x.toString()
 
-    const fun = fork(x2, is3, toStr)
-    const reverseFun = fork(toStr, is3, x2)
+    const fun = map(x2, is3, toStr)
+    const reverseFun = map(toStr, is3, x2)
 
     // @ts-expect-error
-    const fun2 = fork(x2, isN, toStr)
+    const fun2 = map(x2, isN, toStr)
 
-    const fun3 = fork(x2, isN, toStr2)
-    const fun4 = fork(x2, isN2, toStr)
-    const fun5 = fork(x2, isN2)
+    const fun3 = map(x2, isN, toStr2)
+    const fun4 = map(x2, isN2, toStr)
+    const fun5 = map(x2, isN2)
 
     type cases = [
       Expect<
@@ -201,11 +202,11 @@ describe("guard", () => {
     expect(doGreet({ value: 10 })).toBeNull()
   })
 })
-describe("exploit", () => {
+describe("ifSome", () => {
   it("call function if any of conditions met", () => {
     const isEven = (x: number) => x % 2 === 0
     const retTrue = (x: number) => true
-    const retEven = exploit(retTrue, isEven)
+    const retEven = ifSome(retTrue, isEven)
     expect(retEven(2)).toEqual(true)
     expect(retEven(3)).toEqual(null)
     expect(retEven(4)).toEqual(true)
@@ -214,8 +215,7 @@ describe("exploit", () => {
 
     const is2 = (x: number) => x === 2
     const is3 = (x: number) => x === 3
-    const is2Or3 = exploit(retTrue, is2, is3)
-
+    const is2Or3 = ifSome(retTrue, is2, is3)
     expect(is2Or3(2)).toEqual(true)
     expect(is2Or3(3)).toEqual(true)
     expect(is2Or3(4)).toEqual(null)
@@ -224,18 +224,56 @@ describe("exploit", () => {
 
     const toStr = (x: string) => x.toString()
     // @ts-expect-error
-    const f1 = exploit(is2Or3, is2, toStr)
+    const f1 = ifSome(is2Or3, is2, toStr)
     // @ts-expect-error
-    const f2 = exploit(is2Or3, toStr, is2)
+    const f2 = ifSome(is2Or3, toStr, is2)
     // @ts-expect-error
-    const f22 = exploit(add, toStr, is2)
+    const f22 = ifSome(add, toStr, is2)
 
-    const f3 = exploit(add, is2)
+    const f3 = ifSome(add, is2)
     expect(f3(2, 4)).toEqual(6)
     expect(f3(3, 4)).toEqual(null)
 
     const notAdd10 = (x: number, y: number) => x + y !== 10
-    const f4 = exploit(add, notAdd10)
+    const f4 = ifSome(add, notAdd10)
+    expect(f4(3, 5)).toEqual(8)
+    expect(f4(3, 7)).toEqual(null)
+    expect(f4(5, 5)).toEqual(null)
+  })
+})
+describe("ifEvery", () => {
+  it("call function if any of conditions met", () => {
+    const isEven = (x: number) => x % 2 === 0
+    const retTrue = (x: number) => true
+    const retEven = ifEvery(retTrue, isEven)
+    expect(retEven(2)).toEqual(true)
+    expect(retEven(3)).toEqual(null)
+    expect(retEven(4)).toEqual(true)
+    expect(retEven(12)).toEqual(true)
+    expect(retEven(13)).toEqual(null)
+
+    const isBGT3 = (x: number) => x > 3
+    const is2Or3 = ifEvery(retTrue, isEven, isBGT3)
+    expect(is2Or3(2)).toEqual(null)
+    expect(is2Or3(3)).toEqual(null)
+    expect(is2Or3(4)).toEqual(true)
+    expect(is2Or3(12)).toEqual(true)
+    expect(is2Or3(13)).toEqual(null)
+
+    const toStr = (x: string) => x.toString()
+    // @ts-expect-error
+    const f1 = ifEvery(is2Or3, isEven, toStr)
+    // @ts-expect-error
+    const f2 = ifEvery(is2Or3, toStr, isEven)
+    // @ts-expect-error
+    const f22 = ifEvery(add, toStr, isEven)
+
+    const f3 = ifEvery(add, isEven)
+    expect(f3(2, 4)).toEqual(6)
+    expect(f3(3, 4)).toEqual(null)
+
+    const notAdd10 = (x: number, y: number) => x + y !== 10
+    const f4 = ifEvery(add, notAdd10)
     expect(f4(3, 5)).toEqual(8)
     expect(f4(3, 7)).toEqual(null)
     expect(f4(5, 5)).toEqual(null)
