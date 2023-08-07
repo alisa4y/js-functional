@@ -101,7 +101,7 @@ type ComposedFns<T extends any[]> = T extends [
 ]
   ? t extends p[0]
     ? Shift<p> extends []
-      ? [T[0], ...PipeFns<Shift<T>>]
+      ? [T[0], ...ComposedFns<Shift<T>>]
       : never
     : never
   : T

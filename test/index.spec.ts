@@ -37,6 +37,10 @@ describe("compose", () => {
     // @ts-expect-error
     const x2Add = compose(add, x2)
   })
+  it("composing 3 functions", () => {
+    const f = compose(toStr, x2, add)
+    expect(f(2, 2)).toBe("8")
+  })
 })
 describe("pipe", () => {
   it("it pipe 2 functions", () => {
