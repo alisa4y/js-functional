@@ -74,18 +74,32 @@ describe("queue", () => {
     expect(ret).toEqual(3)
   })
 })
-describe("beat", () => {
+describe("some", () => {
   it("executes functions till gets true from a function", () => {
+    let condition = false
     const is2 = (n: number) => n === 2
     const is3 = (n: number) => n === 3
-    const is4 = (n: number) => n === 4
-    const isInRange = some(is2, is3, is4)
-    type cases = [Expect<Eq<typeof isInRange, (n: number) => boolean>>]
+    const is4 = (n?: number) => n === 4
+    const is5 = () => condition
+    const isInRange = some(is2, is3, is4, is5)
+    const isInRange2 = some(is5, is2, is3, is4)
+    type cases = [
+      Expect<Eq<typeof isInRange, (n: number) => boolean>>,
+      Expect<Eq<typeof isInRange2, (n: number) => boolean>>
+    ]
     console.log(isInRange(2))
     expect(isInRange(2)).toEqual(true)
     expect(isInRange(3)).toEqual(true)
     expect(isInRange(4)).toEqual(true)
     expect(isInRange(5)).toEqual(false)
+    condition = true
+    expect(isInRange(5)).toEqual(true)
+
+    const isStr = (s: any) => typeof s === "string"
+    //@ts-expect-error
+    const f = some(isStr, is2)
+
+    const f2 = some(isStr, is5)
   })
 })
 describe("curry", () => {
@@ -111,6 +125,29 @@ describe("curry", () => {
       Expect<Eq<typeof sub1, (x: number) => number>>
     ]
     expect(add2(3)).toEqual(5)
+  })
+  it.skip("can evaluate types from incoming function", () => {
+    type Fn = (...args: any[]) => any
+    function curry<T extends (...args: any[]) => any>(fn: T, f: Fn) {
+      return (): ReturnType<typeof fn> => fn(f)
+    }
+    function staticType(fn: () => number) {
+      return fn()
+    }
+    function dynamicType<T extends () => any>(fn: T): ReturnType<T> {
+      return fn()
+    }
+    const retNumber = () => 10
+    const test1 = staticType(retNumber)
+    const test2 = dynamicType(retNumber)
+    type Eq1 = Expect<Eq<typeof test1, number>>
+    type Eq2 = Expect<Eq<typeof test2, number>>
+
+    const test3 = curry(staticType, retNumber)()
+    const test4 = curry(dynamicType, retNumber)()
+
+    type Eq3 = Expect<Eq<typeof test3, number>>
+    // type Eq4 = Expect<Eq<typeof test4, number>>
   })
 })
 describe("aim", () => {
@@ -193,11 +230,13 @@ describe("flatMap", () => {
     expect(allRets()).toEqual([1, 2, 3, 4, 1, 2])
 
     const f4 = () => [11, "hello"]
-
-    // @ts-expect-error
     const allRets2 = flatMap(f1, f2, f4)
+    expect(allRets2()).toEqual([1, 2, 3, 4, 11, "hello"])
 
-    type cases = [Expect<Eq<typeof allRets, () => number[]>>]
+    type cases = [
+      Expect<Eq<typeof allRets, () => number[]>>,
+      Expect<Eq<typeof allRets2, () => (number | string)[]>>
+    ]
   })
 })
 describe("guard", () => {
@@ -226,13 +265,13 @@ describe("guard", () => {
 describe("ifSome", () => {
   it("call function if any of conditions met", () => {
     const isEven = (x: number) => x % 2 === 0
-    const retTrue = (x: number) => true
-    const retEven = ifSome(retTrue, isEven)
-    expect(retEven(2)).toEqual(true)
-    expect(retEven(3)).toEqual(null)
-    expect(retEven(4)).toEqual(true)
-    expect(retEven(12)).toEqual(true)
-    expect(retEven(13)).toEqual(null)
+    const retTrue = () => true
+    const onEven = ifSome(retTrue, isEven)
+    expect(onEven(2)).toEqual(true)
+    expect(onEven(3)).toEqual(null)
+    expect(onEven(4)).toEqual(true)
+    expect(onEven(12)).toEqual(true)
+    expect(onEven(13)).toEqual(null)
 
     const is2 = (x: number) => x === 2
     const is3 = (x: number) => x === 3
@@ -243,13 +282,16 @@ describe("ifSome", () => {
     expect(is2Or3(12)).toEqual(null)
     expect(is2Or3(13)).toEqual(null)
 
-    const toStr = (x: string) => x.toString()
+    const toStr = (x: string) => false
+
     // @ts-expect-error
     const f1 = ifSome(is2Or3, is2, toStr)
     // @ts-expect-error
     const f2 = ifSome(is2Or3, toStr, is2)
     // @ts-expect-error
     const f22 = ifSome(add, toStr, is2)
+    // @ts-expect-error
+    const f23 = ifSome(toStr, is2)
 
     const f3 = ifSome(add, is2)
     expect(f3(2, 4)).toEqual(6)
@@ -260,6 +302,11 @@ describe("ifSome", () => {
     expect(f4(3, 5)).toEqual(8)
     expect(f4(3, 7)).toEqual(null)
     expect(f4(5, 5)).toEqual(null)
+
+    const isAdd10 = (x: number, y: number) => x + y === 10
+    const trueIfAdd10 = ifSome(retTrue, isAdd10)
+    expect(trueIfAdd10(3, 5)).toEqual(null)
+    expect(trueIfAdd10(3, 7)).toEqual(true)
   })
 })
 describe("ifEvery", () => {

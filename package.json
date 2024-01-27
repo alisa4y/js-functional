@@ -1,6 +1,6 @@
 {
   "name": "bafu",
-  "version": "1.1.3",
+  "version": "2.0.0",
   "description": "a basic functional tools made for typescript to hint types of generated funciton",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

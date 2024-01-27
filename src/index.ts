@@ -33,22 +33,21 @@ export function aim<T extends Fn, U extends any[]>(
   return (...args: [...AimArgs<U, Parameters<T>>]): ReturnType<T> =>
     f(...args, ...args2)
 }
-
-export function some<T extends Fn[]>(...fns: [...T]) {
-  return (...args: Parameters<T[0]>): boolean =>
+export function some<T extends ConditionFn[]>(...fns: HasSuperParams<T>) {
+  return (...args: FindSuperParams<T>): boolean =>
     fns.some(fn => fn.apply(null, args))
 }
-export function every<T extends Fn[]>(...fns: [...T]) {
-  return (...args: Parameters<T[0]>): boolean =>
+export function every<T extends ConditionFn[]>(...fns: HasSuperParams<T>) {
+  return (...args: FindSuperParams<T>): boolean =>
     fns.every(fn => fn.apply(null, args))
 }
 export function map<T extends Fn[]>(...fns: HasSuperParams<T>) {
   return (...args: FindSuperParams<T>) =>
     fns.map(f => f(...args)) as GetRetTypes<T>
 }
-export function flatMap<T extends Fn[]>(...fns: HasSParamsAndRets<T>) {
+export function flatMap<T extends Fn[]>(...fns: HasSuperParams<T>) {
   return (...args: FindSuperParams<T>) =>
-    fns.flatMap(f => f(...args)) as GetRetTypes<T>[0]
+    fns.flatMap(f => f(...args)) as any as FlatRetTypes<GetRetTypes<T>>
 }
 export function guard<T extends Fn, U extends (arg: GuardType<T>) => any>(
   f: U,
@@ -57,25 +56,37 @@ export function guard<T extends Fn, U extends (arg: GuardType<T>) => any>(
   return (arg: Parameters<T>[0]): ReturnType<U> | null =>
     (gfn(arg) && f(arg)) || null
 }
-export function ifSome<T extends Fn>(
+export function ifSome<T extends Fn, U extends ConditionFn[]>(
   mainFn: T,
-  ...checks: ((...args: Parameters<T>) => boolean)[]
+  ...checks: U extends Rest<HasSuperParams<[T, ...U]>> ? U : never
 ) {
-  const condition = some(...checks)
-  return (...args: [...Parameters<T>]): ReturnType<T> | null =>
-    (condition(...args) && mainFn(...args)) || null
+  const conditionFn: Fn = some(...checks)
+  return (...args: FindSuperParams<[T, ...U]>): ReturnType<T> | null =>
+    (conditionFn(...args) && mainFn(...args)) || null
 }
-export function ifEvery<T extends Fn>(
+export function ifEvery<T extends Fn, U extends ConditionFn[]>(
   mainFn: T,
-  ...checks: ((...args: Parameters<T>) => boolean)[]
+  ...checks: U extends Rest<HasSuperParams<[T, ...U]>> ? U : never
 ) {
-  const condition = every(...checks)
-  return (...args: [...Parameters<T>]): ReturnType<T> | null =>
+  const condition: Fn = every(...checks)
+  return (...args: FindSuperParams<[T, ...U]>): ReturnType<T> | null =>
     (condition(...args) && mainFn(...args)) || null
 }
 
 // ----------------  types ----------------
 type Fn = (...args: any[]) => any
+type ConditionFn = (...args: any[]) => boolean
+
+type FlatRetTypes<T extends any[], R extends any[] = []> = T extends [
+  infer t,
+  ...infer rest
+]
+  ? FlatRetTypes<rest, (R[number] | GetArrayType<t>)[]>
+  : R
+
+type GetArrayType<T> = T extends { [key: number]: infer t } ? t : never
+
+type Rest<T> = T extends [any, ...infer rest] ? rest : never
 
 type LastT<T extends any[], R = any> = T extends [infer a, ...infer tRest]
   ? LastT<tRest, a>
@@ -129,18 +140,6 @@ type Eq<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y
   ? true
   : false
 
-type IsSuperset<T1, T2> = T1 extends [infer t1, ...infer t1Rest]
-  ? T2 extends [infer t2, ...infer t2Rest]
-    ? Eq<t1, t2> extends true
-      ? IsSuperset<t1Rest, t2Rest>
-      : false
-    : true
-  : [T2] extends [never]
-  ? false
-  : T2 extends []
-  ? true
-  : false
-
 type Expect<T extends true> = T
 
 // type testIsSuperset = [
@@ -187,6 +186,18 @@ type FindSuperset<T extends any[], S extends any = []> = T extends [
     ? FindSuperset<[b, ...rest], b>
     : never
   : S
+
+type IsSuperset<T1, T2> = T1 extends [infer t1, ...infer t1Rest]
+  ? T2 extends [infer t2, ...infer t2Rest]
+    ? Eq<t1, t2> extends true
+      ? IsSuperset<t1Rest, t2Rest>
+      : false
+    : true
+  : [T2] extends [never]
+  ? false
+  : T2 extends []
+  ? true
+  : false
 
 type GetFnsParams<T extends any[], P extends any[] = []> = T extends [
   infer f,
