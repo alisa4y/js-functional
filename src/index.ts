@@ -1,3 +1,7 @@
+// --------------------  constants  --------------------
+const paramRgx = /\(([^)]*)\)/
+
+// --------------------  functional tools  --------------------
 export function compose<T extends Fn[]>(
   ...fns: [...T] extends ComposedFns<[...T]> ? [...T] : never
 ) {
@@ -30,8 +34,20 @@ export function aim<T extends Fn, U extends any[]>(
   f: T,
   ...args2: U extends IsAimArgs<U, Parameters<T>> ? U : never
 ) {
-  return (...args: [...AimArgs<U, Parameters<T>>]): ReturnType<T> =>
-    f(...args, ...args2)
+  const ar: any[] = []
+  const fLength = getAllParameters(f).length
+  const startArgPosition = fLength - args2.length
+
+  if (startArgPosition < 1) throw new Error(`too much arguments passed to aim`)
+
+  for (let i = startArgPosition; i < fLength; i++)
+    ar[i] = args2[i - startArgPosition]
+
+  return (...args: [...AimArgs<U, Parameters<T>>]): ReturnType<T> => {
+    for (let i = 0; i < startArgPosition; i++) ar[i] = args[i]
+
+    return f(...ar)
+  }
 }
 export function some<T extends ConditionFn[]>(...fns: HasSuperParams<T>) {
   return (...args: FindSuperParams<T>): boolean =>
@@ -71,6 +87,17 @@ export function ifEvery<T extends Fn, U extends ConditionFn[]>(
   const condition: Fn = every(...checks)
   return (...args: FindSuperParams<[T, ...U]>): ReturnType<T> | null =>
     (condition(...args) && mainFn(...args)) || null
+}
+
+// --------------------  tools  --------------------
+function getAllParameters(func: Fn) {
+  const funcStr = func.toString()
+  const paramsStr = funcStr.match(paramRgx)![1]
+
+  // Split the parameters string to get individual parameters
+  const params = paramsStr.split(",").map(param => param.trim())
+
+  return params
 }
 
 // ----------------  types ----------------

@@ -41,6 +41,15 @@ describe("compose", () => {
     const f = compose(toStr, x2, add)
     expect(f(2, 2)).toBe("8")
   })
+  test("compose 3 function with spread array", () => {
+    const f = compose(...[toStr, x2, add])
+    expect(f(2, 2)).toBe("8")
+  })
+  // test("compose 3 function with spread array variable", () => {
+  //   const funs = [toStr, x2, add]
+  //   const f = compose(...[funs])
+  //   expect(f(2, 2)).toBe("8")
+  // })
 })
 describe("pipe", () => {
   it("it pipe 2 functions", () => {
@@ -126,29 +135,29 @@ describe("curry", () => {
     ]
     expect(add2(3)).toEqual(5)
   })
-  it.skip("can evaluate types from incoming function", () => {
-    type Fn = (...args: any[]) => any
-    function curry<T extends (...args: any[]) => any>(fn: T, f: Fn) {
-      return (): ReturnType<typeof fn> => fn(f)
-    }
-    function staticType(fn: () => number) {
-      return fn()
-    }
-    function dynamicType<T extends () => any>(fn: T): ReturnType<T> {
-      return fn()
-    }
-    const retNumber = () => 10
-    const test1 = staticType(retNumber)
-    const test2 = dynamicType(retNumber)
-    type Eq1 = Expect<Eq<typeof test1, number>>
-    type Eq2 = Expect<Eq<typeof test2, number>>
+  // it("can evaluate types of a dynamic function", () => {
+  //   type Fn = (...args: any[]) => any
+  //   function curry<T extends (...args: any[]) => any>(fn: T, f: Fn) {
+  //     return (): ReturnType<typeof fn> => fn(f)
+  //   }
+  //   function staticType(fn: () => number) {
+  //     return fn()
+  //   }
+  //   function dynamicType<T extends () => any>(fn: T): ReturnType<T> {
+  //     return fn()
+  //   }
+  //   const retNumber = () => 10
+  //   const test1 = staticType(retNumber)
+  //   const test2 = dynamicType(retNumber)
+  //   type Eq1 = Expect<Eq<typeof test1, number>>
+  //   type Eq2 = Expect<Eq<typeof test2, number>>
 
-    const test3 = curry(staticType, retNumber)()
-    const test4 = curry(dynamicType, retNumber)()
+  //   const test3 = curry(staticType, retNumber)()
+  //   const test4 = curry(dynamicType, retNumber)()
 
-    type Eq3 = Expect<Eq<typeof test3, number>>
-    // type Eq4 = Expect<Eq<typeof test4, number>>
-  })
+  //   type Eq3 = Expect<Eq<typeof test3, number>>
+  //   // type Eq4 = Expect<Eq<typeof test4, number>>
+  // })
 })
 describe("aim", () => {
   it("same as curry but in different arguments order the later comes first", () => {
@@ -180,6 +189,14 @@ describe("aim", () => {
     expect(f2("hello")).toEqual("hello1")
     expect(mp(11, "hello")).toEqual(11)
     expect(mp2(13)).toEqual(13)
+  })
+  it("will slice if at second time got more arguments than needed", () => {
+    const add2 = aim(add, 2)
+
+    expect(add2(2)).toBe(4)
+    expect(add2.apply(null, [2])).toBe(4)
+    expect(add2.call(null, 2)).toBe(4)
+    expect([1].map(add2)[0]).toBe(3)
   })
 })
 describe("map", () => {

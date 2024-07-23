@@ -24,6 +24,7 @@ takes as many functions and executes them in the given order against passed argu
 used in situations when you are doing some filtering
 
 `curry : (fn, args1) => (args2) => fn(args1, args2)` the known curry
+
 `aim: (fn, args2) => (args1) => fn(args1, args2)` same as curry with a difference that the curried arguments will be concatnated to the passed arguments (notice that in curry the it's reverse)
 
 `fork : (...fns) : any[]`
